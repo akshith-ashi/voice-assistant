@@ -12,7 +12,10 @@ engine.setProperty('rate', 150)
 # Speak out text
 def speak(text):
     engine.say(text)
-    engine.runAndWait()
+    try:
+        engine.runAndWait()
+    except Exception:
+        pass
 
 # Greet user based on time
 def greet_user():
@@ -60,14 +63,24 @@ def take_command():
     with sr.Microphone() as source:
         print("Listening...")
         r.adjust_for_ambient_noise(source)
-        audio = r.listen(source)
+        try:
+            audio = r.listen(source, timeout=5, phrase_time_limit=5)
+        except sr.WaitTimeoutError:
+            speak("No voice detected. Please try again.")
+            return ""
+
     try:
-        command = r.recognize_google(audio)
-        print("User said:", command)
-    except:
-        speak("Sorry, I did not catch that.")
+        print("Recognizing...")
+        query = r.recognize_google(audio)
+        print(f"User said: {query}")
+    except sr.UnknownValueError:
+        speak("Sorry, I could not understand.")
         return ""
-    return command.lower()
+    except sr.RequestError:
+        speak("Could not request results from Google.")
+        return ""
+    return query.lower()
+
 
 # Main function
 def run_assistant():
